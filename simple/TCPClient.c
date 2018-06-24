@@ -19,7 +19,7 @@ int main(int argc, char const *argv[]){
 	memset(&server_address, 0, sizeof(server_address));
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(9000);
-	server_address.sin_addr.s_addr = inet_addr("104.211.27.158");
+	server_address.sin_addr.s_addr = inet_addr("0.0.0.0");
 
 	// fazendo conexao com o servidor
 	int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
@@ -28,6 +28,10 @@ int main(int argc, char const *argv[]){
 	if (connection_status == -1){
 		printf("There was an error making a connection to the remote socket\n");
 	}
+
+	//enviado request
+	char client_request[] = "lower to upper";
+	send(network_socket, client_request, sizeof(client_request), 0);
 
 	// pegando a response do servidor
 	char server_response[256];

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -9,9 +10,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+void str_to_upper(char *src){
+	while (*src != '\0'){
+		*src = toupper((unsigned char) *src);
+		src++;
+	} 
+}
+
 int main(int argc, char const *argv[]){
 	// response do servidor
-	char server_message[256] = "You have rechead the server!";
+	char server_message[256];
 
 	// criando socket do servidor
 	int server_socket;
@@ -19,23 +27,29 @@ int main(int argc, char const *argv[]){
 
 	// setando dados do servidor (porta, addr)
 	struct sockaddr_in server_address;
-	memset(&server_address, 0, sizeof(server_address));
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(9000);
 	server_address.sin_addr.s_addr = inet_addr("0.0.0.0");
 
 	bind(server_socket, (struct sockaddr *) &server_address, sizeof(server_address));
 
-	listen(server_socket, 5);
+	listen(server_socket, 1);
 
-	// aceitando conexao com o cliente
 	int client_socket;
-	client_socket = accept(server_socket, NULL, NULL);
+	while(1){
+		// aceitando conexao com o cliente
+		client_socket = accept(server_socket, NULL, NULL);
 
-	// enviando response ao cliente
-	send(client_socket, server_message, sizeof(server_message), 0);
+		// recebendo request
+		memset(&server_message, '\0', sizeof(server_message));
+		recv(client_socket, &server_message, sizeof(server_message), 0);
 
-	close(server_socket);
+		// enviando response ao cliente modificada
+		str_to_upper(server_message);
+		send(client_socket, server_message, sizeof(server_message), 0);
+
+		close(client_socket);
+	}
 
 	return 0;
 }
