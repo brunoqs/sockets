@@ -1,8 +1,13 @@
+/*
+ usage: gcc TCPServer.c -o server -lpthread 
+		./server
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <pthread.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,9 +22,25 @@ void str_to_upper(char *src){
 	} 
 }
 
-int main(int argc, char const *argv[]){
+void *connection_handler(void *socket){
 	// response do servidor
 	char server_message[256];
+	int client_socket = *(int*)socket;
+
+	memset(&server_message, '\0', sizeof(server_message));
+	recv(client_socket, &server_message, sizeof(server_message), 0);
+
+	// enviando response ao cliente modificada
+	str_to_upper(server_message);
+	send(client_socket, server_message, sizeof(server_message), 0);
+
+	close(client_socket);
+	return NULL;
+}
+
+int main(int argc, char const *argv[]){
+	// response do servidor
+	//char server_message[256];
 
 	// criando socket do servidor
 	int server_socket;
@@ -36,19 +57,20 @@ int main(int argc, char const *argv[]){
 	listen(server_socket, 1);
 
 	int client_socket;
+	pthread_t thread_id;
 	while(1){
 		// aceitando conexao com o cliente
 		client_socket = accept(server_socket, NULL, NULL);
 
-		// recebendo request
-		memset(&server_message, '\0', sizeof(server_message));
-		recv(client_socket, &server_message, sizeof(server_message), 0);
+		// criando thread
+        if(pthread_create( &thread_id , NULL ,  connection_handler , (void*) &client_socket) < 0){
+            perror("could not create thread");
+            return 1;
+        }
+        
+       // se colocar o join, a thread precisa terminar para executar outra
+       // pthread_join(thread_id , NULL);
 
-		// enviando response ao cliente modificada
-		str_to_upper(server_message);
-		send(client_socket, server_message, sizeof(server_message), 0);
-
-		close(client_socket);
 	}
 
 	return 0;
